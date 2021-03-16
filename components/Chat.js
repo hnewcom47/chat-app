@@ -3,6 +3,8 @@ import React, { Component } from 'react';
 import { View, Text, Platform, KeyboardAvoidingView } from 'react-native';
 import AsyncStorage from '@react-native-community/async-storage';
 import NetInfo from '@react-native-community/netinfo';
+import MapView from 'react-native-maps';
+import CustomActions from './CustomActions';
 
 // Google Firebase
 const firebase = require('firebase');
@@ -20,7 +22,11 @@ export default class Chat extends React.Component {
             },
             uid: 0,
             isConnected: false,
-            image: null
+            image: null,
+            location: {
+                latitude: '',
+                longitude: ''
+            }
         };
 
         const firebaseConfig = {
@@ -42,7 +48,7 @@ export default class Chat extends React.Component {
     }
 
     async getMessages() {
-        let messages = '';
+        let messages = [];
         try {
             messages = await AsyncStorage.getItem('messages') || [];
             this.setState({
@@ -73,6 +79,10 @@ export default class Chat extends React.Component {
     };
 
     componentDidMount() {
+
+        let name = this.props.route.params.name;
+
+        this.props.navigation.setOptions({ title: name });
 
         NetInfo.fetch().then(connection => {
             if (connection.isConnected) {
@@ -136,9 +146,9 @@ export default class Chat extends React.Component {
         this.referenceChatMessages.add({
             _id: message._id,
             createdAt: message.createdAt,
-            text: message.text,
+            text: message.text || '',
             user: message.user,
-            image: message.image || null,
+            image: message.image || '',
             location: message.location || null,
         });
     }
@@ -177,20 +187,62 @@ export default class Chat extends React.Component {
         }
     }
 
-    render() {
-        let name = this.props.route.params.name;
-        let color = this.props.route.params.color;
+    renderCustomActions = (props) => {
+        return <CustomActions {...props} />;
+    }
 
-        this.props.navigation.setOptions({ title: name });
+    renderCustomView(props) {
+        const { currentMessage } = props;
+        if (currentMessage.location) {
+            return (
+                <MapView
+                    style={{
+                        width: 150,
+                        height: 100,
+                        borderRadius: 13,
+                        margin: 3
+                    }}
+                    region={{
+                        latitude: currentMessage.location.latitude,
+                        longitude: currentMessage.location.longitude,
+                        latitudeDelta: 0.0922,
+                        longitudeDelta: 0.0421
+                    }}
+                />
+            );
+        }
+        return null;
+    }
+
+    render() {
+        let color = this.props.route.params.color;
 
         return (
             <View style={{ flex: 1, backgroundColor: color }}>
+                {this.state.image &&
+                    <Image source={{ uri: this.state.image.uri }}
+                        style={{ width: 200, height: 200 }} />}
+
+                {this.state.location &&
+                    <MapView
+                        style={{ width: 300, height: 200 }}
+                        region={{
+                            latitude: this.state.location.coords.latitude,
+                            longitude: this.state.location.coords.longitude,
+                            latitudeDelta: 0.0922,
+                            longitudeDelta: 0.0421,
+                        }}
+                    />}
+
                 <GiftedChat
                     renderBubble={this.renderBubble.bind(this)}
                     renderInputToolbar={this.renderInputToolbar.bind(this)}
                     messages={this.state.messages}
                     onSend={messages => this.onSend(messages)}
                     user={this.state.user}
+                    image={this.state.image}
+                    renderActions={this.renderCustomActions}
+                    renderCustomView={this.renderCustomView}
                 />
                 { Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
             </View >
