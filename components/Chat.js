@@ -23,10 +23,8 @@ export default class Chat extends React.Component {
             uid: 0,
             isConnected: false,
             image: null,
-            location: {
-                latitude: '',
-                longitude: ''
-            }
+            // We can just instantiate a null location 
+            location: null,
         };
 
         const firebaseConfig = {
@@ -132,7 +130,7 @@ export default class Chat extends React.Component {
                     name: data.user.name,
                     avatar: data.user.avatar,
                 },
-                image: data.image || null,
+                image: data.image || "",
                 location: data.location || null,
             });
         });
@@ -203,8 +201,9 @@ export default class Chat extends React.Component {
                         margin: 3
                     }}
                     region={{
-                        latitude: currentMessage.location.latitude,
-                        longitude: currentMessage.location.longitude,
+                        // Matt's edit: You need to convert to Number type to prevent evaluating an undefined type
+                        latitude: Number(currentMessage.location.latitude),
+                        longitude: Number(currentMessage.location.longitude),
                         latitudeDelta: 0.0922,
                         longitudeDelta: 0.0421
                     }}
@@ -219,7 +218,10 @@ export default class Chat extends React.Component {
 
         return (
             <View style={{ flex: 1, backgroundColor: color }}>
-                {this.state.image &&
+                {/* Matt's edit: These two blocks of code are unneccessary
+                
+                */}
+                {/* {this.state.image &&
                     <Image source={{ uri: this.state.image.uri }}
                         style={{ width: 200, height: 200 }} />}
 
@@ -227,12 +229,13 @@ export default class Chat extends React.Component {
                     <MapView
                         style={{ width: 300, height: 200 }}
                         region={{
+                            // ERROR LOCATION DURING RUNTIME
                             latitude: this.state.location.coords.latitude,
                             longitude: this.state.location.coords.longitude,
                             latitudeDelta: 0.0922,
                             longitudeDelta: 0.0421,
                         }}
-                    />}
+                    />} */}
 
                 <GiftedChat
                     renderBubble={this.renderBubble.bind(this)}
